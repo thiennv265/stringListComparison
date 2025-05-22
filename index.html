@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>So sánh từ tìm kiếm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<script>
+  document.body.innerHTML = `
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #f7f9fc;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 100%;
+        padding: 30px;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      textarea, input[type="number"], select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        margin-top: 5px;
+        resize: both;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      #startBtn {
+        background: #007bff;
+        color: white;
+      }
+
+      #startBtn:hover {
+        background: #0056b3;
+      }
+
+      #downloadBtn {
+        background: #28a745;
+        color: white;
+      }
+
+      #downloadBtn:hover {
+        background: #1e7e34;
+      }
+
+      table {
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      table th, table td {
+        border: 1px solid #ccc;
+        padding: 6px 10px;
+        text-align: left;
+      }
+
+      table th {
+        background: #f1f1f1;
+      }
+
+      .tables-wrapper {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        gap: 0;
+      }
+
+      .table-box {
+        flex: 1;
+        margin: 0;
+        min-width: 350px;
+      }
+
+      #progress {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+
+    <div class="container">
+      <h2>🔍 So sánh từ tìm kiếm và danh sách kiểm tra</h2>
+
+      <label>📥 <strong>Input List (phân cách bằng dấu phẩy):</strong></label>
+      <textarea id="inputList" rows="5">Nguyễn Văn,Thiên Nhiên</textarea><br><br>
+
+      <label>📋 <strong>Checker List (phân cách bằng dấu phẩy):</strong></label>
+      <textarea id="checkerList" rows="5">Nguyễn Văn Thiên,Thiên Nhiên Nguyễn</textarea><br><br>
+
+      <label>🔧 <strong>Chọn kiểu tìm kiếm:</strong></label>
+      <select id="matchMode">
+        <option value="percent">Tìm theo % khớp</option>
+        <option value="exact">Tìm theo cụm từ chính xác</option>
+      </select><br><br>
+
+      <label>🎯 <strong>% khớp tối thiểu (chỉ áp dụng nếu chọn theo %):</strong></label>
+      <input id="minMatch" type="number" value="80" min="0" max="100"><br><br>
+
+      <button id="startBtn" onclick="startMatching()">▶️ Start</button>
+      <button id="downloadBtn" onclick="downloadCSV()" style="display:none;">⬇️ Tải CSV</button>
+
+      <p id="progress"></p>
+      <div id="results"></div>
+    </div>
+  `;
+
+  let lastResults = [];
+
+  window.startMatching = async function () {
+    const inputListRaw = document.getElementById("inputList").value.split(",").map(s => s.trim()).filter(Boolean);
+    const checkerListRaw = document.getElementById("checkerList").value.split(",").map(s => s.trim()).filter(Boolean);
+    const minMatch = parseInt(document.getElementById("minMatch").value);
+    const mode = document.getElementById("matchMode").value;
+
+    const progressEl = document.getElementById("progress");
+    const resultsEl = document.getElementById("results");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const inputList = inputListRaw.map(s => s.toLowerCase());
+    const checkerList = checkerListRaw.map(s => s.toLowerCase());
+
+    const total = inputList.length;
+    const results = [];
+    const summaryRows = [];
+
+    resultsEl.innerHTML = "";
+    downloadBtn.style.display = "none";
+
+    function splitWords(str) {
+      return str.split(/\s+/);
+    }
+
+    function matchPercent(searchWords, checkerWords) {
+      const matched = searchWords.filter(word => checkerWords.includes(word));
+      return (matched.length / searchWords.length) * 100;
+    }
+
+    for (let i = 0; i < inputList.length; i++) {
+      const inputItem = inputList[i];
+      const inputRaw = inputListRaw[i];
+      const searchWords = splitWords(inputItem);
+      let matchCount = 0;
+
+      for (let j = 0; j < checkerList.length; j++) {
+        const checkerItem = checkerList[j];
+        const checkerRaw = checkerListRaw[j];
+        const checkerWords = splitWords(checkerItem);
+        let matched = false;
+        let percent = 0;
+
+        if (mode === "percent") {
+          percent = matchPercent(searchWords, checkerWords);
+          matched = percent >= minMatch;
+        } else if (mode === "exact") {
+          matched = checkerItem.includes(inputItem);
+          percent = matched ? 100 : 0;
+        }
+
+        if (matched) {
+          results.push({
+            "Chuỗi gốc": inputRaw,
+            "Chuỗi dùng tìm kiếm": inputItem,
+            "Chuỗi tìm được": checkerItem,
+            "Chuối gốc tìm được": checkerRaw,
+            "% khớp nhau": percent.toFixed(2)
+          });
+          matchCount++;
+        }
+      }
+
+      summaryRows.push({
+        "STT": `${i + 1} / ${total}`,
+        "Chuỗi dùng tìm kiếm": inputRaw,
+        "Số kết quả khớp": matchCount
+      });
+
+      progressEl.textContent = `(${i + 1}/${total}) Đang tìm: "${inputRaw}" → ${matchCount} kết quả khớp`;
+      if (i === inputList.length - 1) {
+        progressEl.textContent = `✅ Đã xong: ${total}/${total} chuỗi đã xử lý.`;
+      }
+
+      await new Promise(r => setTimeout(r, 50));
+    }
+
+    if (results.length === 0) {
+      resultsEl.innerHTML = `<p style="color: red; font-weight: bold;">❌ Không có kết quả nào khớp.</p>`;
+      return;
+    }
+
+    let summaryTable = "<table><tr><th>STT</th><th>Chuỗi tìm kiếm</th><th>Số kết quả khớp</th></tr>";
+    for (const row of summaryRows) {
+      summaryTable += `<tr><td>${row["STT"]}</td><td>${row["Chuỗi dùng tìm kiếm"]}</td><td>${row["Số kết quả khớp"]}</td></tr>`;
+    }
+    summaryTable += "</table>";
+
+    let resultTable = "<table><tr><th>Chuỗi gốc</th><th>Chuỗi dùng tìm kiếm</th><th>Chuỗi tìm được</th><th>Chuối gốc tìm được</th><th>% khớp nhau</th></tr>";
+    for (const row of results) {
+      resultTable += `<tr><td>${row["Chuỗi gốc"]}</td><td>${row["Chuỗi dùng tìm kiếm"]}</td><td>${row["Chuỗi tìm được"]}</td><td>${row["Chuối gốc tìm được"]}</td><td>${row["% khớp nhau"]}</td></tr>`;
+    }
+    resultTable += "</table>";
+
+    resultsEl.innerHTML = `
+      <div class="tables-wrapper">
+        <div class="table-box">${summaryTable}</div>
+        <div class="table-box">${resultTable}</div>
+      </div>
+    `;
+
+    lastResults = results;
+    downloadBtn.style.display = "inline-block";
+  };
+
+  window.downloadCSV = function () {
+    if (lastResults.length === 0) {
+      alert("Không có dữ liệu để tải.");
+      return;
+    }
+
+    const headers = ["Chuỗi gốc", "Chuỗi dùng tìm kiếm", "Chuỗi tìm được", "Chuối gốc tìm được", "% khớp nhau"];
+    const csvRows = [
+      headers,
+      ...lastResults.map(r => headers.map(field => `"${r[field].replace(/"/g, '""')}"`))
+    ];
+
+    const csvContent = csvRows.map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ket_qua_day_du.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+</script>
+
+</body>
+</html>

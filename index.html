@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <h2>So sánh từ tìm kiếm</h2>
+  <title>So sánh từ tìm kiếm</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -26,7 +26,7 @@
       h2 {
         margin-bottom: 20px;
         color: #333;
-        font-size: 12px;
+        font-size: 14px;
       }
 
       textarea, input[type="number"], select {
@@ -36,7 +36,7 @@
         border: 1px solid #ccc;
         font-size: 12px;
         margin-top: 5px;
-        resize: both;
+        resize: vertical;
       }
 
       button {
@@ -86,7 +86,7 @@
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-between;
-        gap: 0;
+        gap: 10px;
       }
 
       .table-box {
@@ -104,11 +104,13 @@
     <div class="container">
       <h2>🔍 SO SÁNH CHUỖI</h2>
 
-      <label>📥 <strong>Input List (phân cách bằng dấu phẩy):</strong></label>
-      <textarea id="inputList" rows="5">Nguyễn Văn,Thiên Nhiên</textarea><br><br>
+      <label>📥 <strong>Input List (mỗi dòng 1 giá trị – copy từ Excel):</strong></label>
+      <textarea id="inputList" rows="5">Nguyễn Văn
+Thiên Nhiên</textarea><br><br>
 
-      <label>📋 <strong>Checker List (phân cách bằng dấu phẩy):</strong></label>
-      <textarea id="checkerList" rows="5">Nguyễn Văn Thiên,Thiên Nhiên Nguyễn</textarea><br><br>
+      <label>📋 <strong>Checker List (mỗi dòng 1 giá trị – copy từ Excel):</strong></label>
+      <textarea id="checkerList" rows="5">Nguyễn Văn Thiên
+Thiên Nhiên Nguyễn</textarea><br><br>
 
       <label>🔧 <strong>Chọn kiểu tìm kiếm:</strong></label>
       <select id="matchMode">
@@ -130,8 +132,8 @@
   let lastResults = [];
 
   window.startMatching = async function () {
-    const inputListRaw = document.getElementById("inputList").value.split(",").map(s => s.trim()).filter(Boolean);
-    const checkerListRaw = document.getElementById("checkerList").value.split(",").map(s => s.trim()).filter(Boolean);
+    const inputListRaw = document.getElementById("inputList").value.split(/\n/).map(s => s.trim()).filter(Boolean);
+    const checkerListRaw = document.getElementById("checkerList").value.split(/\n/).map(s => s.trim()).filter(Boolean);
     const minMatch = parseInt(document.getElementById("minMatch").value);
     const mode = document.getElementById("matchMode").value;
 
